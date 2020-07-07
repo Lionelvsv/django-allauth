@@ -24,9 +24,11 @@ from .apple_session import add_apple_session, persist_apple_session
 from .client import AppleOAuth2Client
 from .provider import AppleProvider
 
+
 class AppleOAuth2Adapter(OAuth2Adapter):
     client_cls = AppleOAuth2Client
     provider_id = AppleProvider.id
+    support_session_state = False
     access_token_url = "https://appleid.apple.com/auth/token"
     authorize_url = "https://appleid.apple.com/auth/authorize"
     public_key_url = "https://appleid.apple.com/auth/keys"
@@ -80,8 +82,9 @@ class AppleOAuth2Adapter(OAuth2Adapter):
         token = SocialToken(
             token=data["access_token"],
         )
-        token.token_secret=data.get("refresh_token", "")
-
+        print("id_token", data["id_token"])
+        print("access_token", data["access_token"])
+        token.token_secret = data.get("refresh_token", "")
         expires_in = data.get(self.expires_in_key)
         if expires_in:
             token.expires_at = (
@@ -92,7 +95,6 @@ class AppleOAuth2Adapter(OAuth2Adapter):
         # access_tokens, and user info from the apple post.
         identity_data = self.get_verified_identity_data(data["id_token"])
         token.user_data = {**data, **identity_data}
-
         return token
 
     def complete_login(self, request, app, token, **kwargs):
@@ -108,11 +110,12 @@ class AppleOAuth2Adapter(OAuth2Adapter):
             request.apple_login_session.delete()
         except AttributeError:
             pass
-
         return login
 
     def get_user_scope_data(self, request):
-        user_scope_data = request.apple_login_session.get("user", "")
+        # user_scope_data = request.apple_login_session.get("user", "")
+        user_scope_data = request.session.get("user")
+
         try:
             return json.loads(user_scope_data)
         except json.JSONDecodeError:
@@ -127,11 +130,13 @@ class AppleOAuth2Adapter(OAuth2Adapter):
         # Exchange `code`
         code = get_request_param(request, "code")
         access_token_data = client.get_access_token(code)
-
+        # print(request.session.get("id_token"))
         return {
             **access_token_data,
             **self.get_user_scope_data(request),
-            "id_token":request.apple_login_session.get("id_token")
+            # "id_token": request.apple_login_session.get("id_token")
+            "id_token": request.session.get("id_token")
+
         }
 
 
@@ -166,6 +171,7 @@ def apple_post_callback(request, finish_endpoint_name="apple_finish_callback"):
     keys_to_save_to_session = ["user", "id_token"]
     for key in keys_to_save_to_session:
         request.apple_login_session[key] = get_request_param(request, key, "")
+        request.session[key] = get_request_param(request, key, "")
 
     url = request.build_absolute_uri(reverse(finish_endpoint_name))
     response = HttpResponseRedirect("{url}?{query}".format(

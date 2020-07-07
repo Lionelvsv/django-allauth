@@ -1,5 +1,8 @@
 from __future__ import absolute_import
 
+import json
+
+
 from django.contrib.auth import authenticate
 from django.contrib.sites.models import Site
 from django.contrib.sites.shortcuts import get_current_site
@@ -51,7 +54,7 @@ class SocialApp(models.Model):
                               max_length=191,
                               blank=True,
                               help_text=_('API secret, client secret, or'
-                              ' consumer secret'))
+                                          ' consumer secret'))
     key = models.CharField(verbose_name=_('key'),
                            max_length=191,
                            blank=True,
@@ -311,6 +314,15 @@ class SocialLogin(object):
             raise PermissionDenied()
         state, verifier = request.session.pop('socialaccount_state')
         return state
+
+    @classmethod
+    def stash_urlencoded_state(cls, request):
+        state = cls.state_from_request(request)
+        return json.dumps(state)
+
+    @classmethod
+    def unstash_urlencoded_state(cls, state):
+        return json.loads(state)
 
     @classmethod
     def verify_and_unstash_state(cls, request, verifier):
