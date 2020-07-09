@@ -29,8 +29,10 @@ class AppleProvider(OAuth2Provider):
         ret = []
         email = data.get('email')
         verified = data.get('email_verified')
-        if not isinstance(verified, bool):
+        if not isinstance(verified, bool) and isinstance(verified, None):
             verified = verified.lower() == 'true'
+        else:
+            verified = False
         if email:
             ret.append(
                 EmailAddress(
@@ -46,5 +48,6 @@ class AppleProvider(OAuth2Provider):
         if QUERY_EMAIL:
             scopes.append("email")
         return scopes
+
 
 provider_classes = [AppleProvider]
