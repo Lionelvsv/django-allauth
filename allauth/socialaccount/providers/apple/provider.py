@@ -29,7 +29,9 @@ class AppleProvider(OAuth2Provider):
         ret = []
         email = data.get('email')
         verified = data.get('email_verified')
-        if not isinstance(verified, bool) and isinstance(verified, None):
+        if verified is None:
+            verified = False
+        elif not isinstance(verified, bool):
             verified = verified.lower() == 'true'
         else:
             verified = False
