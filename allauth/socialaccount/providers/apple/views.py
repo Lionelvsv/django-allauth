@@ -113,8 +113,8 @@ class AppleOAuth2Adapter(OAuth2Adapter):
         return login
 
     def get_user_scope_data(self, request):
-        # user_scope_data = request.apple_login_session.get("user", "")
-        user_scope_data = request.session.get("user")
+        user_scope_data = request.apple_login_session.get("user", "")
+        # user_scope_data = request.session.get("user")
 
         try:
             return json.loads(user_scope_data)
@@ -134,8 +134,8 @@ class AppleOAuth2Adapter(OAuth2Adapter):
         return {
             **access_token_data,
             **self.get_user_scope_data(request),
-            # "id_token": request.apple_login_session.get("id_token")
-            "id_token": request.session.get("id_token")
+            "id_token": request.apple_login_session.get("id_token")
+            # "id_token": request.session.get("id_token")
 
         }
 
