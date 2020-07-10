@@ -59,9 +59,11 @@ class AppleOAuth2Adapter(OAuth2Adapter):
         app = SocialApp.objects.get(provider=provider.id)
         return [aud.strip() for aud in app.client_id.split(",")]
 
-    def get_verified_identity_data(self, id_token):
-        provider = self.get_provider()
-        allowed_auds = self.get_client_id(provider)
+    def get_verified_identity_data(self, id_token, client_id):
+        if client_id is None:
+            provider = self.get_provider()
+            allowed_auds = self.get_client_id(provider)
+        allowed_auds = client_id
 
         try:
             public_key = self.get_public_key(id_token)
@@ -78,7 +80,7 @@ class AppleOAuth2Adapter(OAuth2Adapter):
         except jwt.PyJWTError as e:
             raise OAuth2Error("Invalid id_token") from e
 
-    def parse_token(self, data):
+    def parse_token(self, data, client_id=None):
         token = SocialToken(
             token=data["access_token"],
         )
@@ -93,7 +95,8 @@ class AppleOAuth2Adapter(OAuth2Adapter):
 
         # `user_data` is a big flat dictionary with the parsed JWT claims
         # access_tokens, and user info from the apple post.
-        identity_data = self.get_verified_identity_data(data["id_token"])
+        identity_data = self.get_verified_identity_data(
+            data["id_token"], client_id)
         token.user_data = {**data, **identity_data}
         return token
 
@@ -123,12 +126,14 @@ class AppleOAuth2Adapter(OAuth2Adapter):
             # so return blank dictionary instead
             return {}
 
-    def get_access_token_data(self, request, app, client):
+    def get_access_token_data(self, request, app, client, code=None):
         """ We need to gather the info from the apple specific login """
         add_apple_session(request)
 
         # Exchange `code`
-        code = get_request_param(request, "code")
+        if code is None:
+            code = get_request_param(request, "code")
+
         access_token_data = client.get_access_token(code)
         # print(request.session.get("id_token"))
         return {
