@@ -134,15 +134,24 @@ class AppleOAuth2Adapter(OAuth2Adapter):
         if code is None:
             code = get_request_param(request, "code")
 
-        access_token_data = client.get_access_token(code)
-        # print(request.session.get("id_token"))
-        return {
-            **access_token_data,
-            **self.get_user_scope_data(request),
-            "id_token": request.apple_login_session.get("id_token")
-            # "id_token": request.session.get("id_token")
+            access_token_data = client.get_access_token(code)
+            # print(request.session.get("id_token"))
+            return {
+                **access_token_data,
+                **self.get_user_scope_data(request),
+                "id_token": request.apple_login_session.get("id_token")
+                # "id_token": request.session.get("id_token")
 
-        }
+            }
+        else:
+            access_token_data = client.get_access_token(code)
+            return {
+                **access_token_data,
+                **self.get_user_scope_data(request),
+                "id_token": access_token_data["id_token"]
+                # "id_token": request.session.get("id_token")
+
+            }
 
 
 @csrf_exempt
