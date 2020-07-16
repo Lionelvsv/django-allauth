@@ -63,7 +63,8 @@ class AppleOAuth2Adapter(OAuth2Adapter):
         if client_id is None:
             provider = self.get_provider()
             allowed_auds = self.get_client_id(provider)
-        allowed_auds = client_id
+        else:
+            allowed_auds = client_id
 
         try:
             public_key = self.get_public_key(id_token)
